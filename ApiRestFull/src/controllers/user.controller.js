@@ -3,9 +3,10 @@ const amqp = require('amqplib/callback_api')
 const elasticsearch = require('elasticsearch')
 const lucene = require('node-lucene')
 
-const Neode = require('neode')
 
+const rbbConfig = require('../config/rabbit.config.js')
 const User = require('../models/user.model.js')
+const kudosC = require('../controllers/kudos.controller.js')
 const _self = this
 
 
@@ -24,7 +25,37 @@ exports.create = async (req, res) => {
             qty: 0
         })
         await user.save()
-        res.send(".ok")
+        kudosC.user
+
+        /* RABBIT */
+
+        // INIT RABBIT
+        amqp.connect(rbbConfig.url, function (error0, connection) {
+            connection.createChannel(function (error1, channel) {
+                channel.assertQueue('', {
+                    exclusive: true
+                }, (err, q) => {
+                    if (err)
+                        throw err
+                    var correlationId = generateUuid()
+                    var fuente = user.username
+                    channel.consume(q.queue, (msg) => {
+                        if (msg.properties.correlationId == correlationId) {
+                        }
+                    }, { noAck: true })
+                    channel.sendToQueue(rbbConfig.queueCreateUser,
+                        Buffer.from(fuente.toString()), {
+                            correlationId: correlationId,
+                            replyTo: q.queue
+                        })
+                })
+            })
+        })
+        // END RABBIT
+
+
+        /* END  */
+        res.redirect('/kudos/')
     } else {
         res.send("USERNAME REPETIDO " + req.body.username)
     }
@@ -38,11 +69,71 @@ exports.findAll = async (req, res) => {
         page: parseInt(page, 10),
         limit: parseInt(limit, 10)
     }
+    const usersDB = await User.find().sort({ nombre: -1 })
+    // console.log(users)
+    usersDB.forEach((u) => {
+        let username = u.get('username')
+
+        // /* ADD QTY */
+        amqp.connect(rbbConfig.url, function (error0, connection) {
+            connection.createChannel(function (error1, channel) {
+                channel.assertQueue(rbbConfig.queueStats + username, {
+                    durable: true
+                })
+                channel.prefetch(1)
+                channel.consume(rbbConfig.queueStats + username, function reply(msg) {
+                    var n = msg.content.toString()
+                    console.log(n)
+                    var r = addQty(username)
+                    channel.sendToQueue(msg.properties.replyTo,
+                        Buffer.from("OK"), {
+                            correlationId: msg.properties.correlationId
+                        })
+                    channel.ack(msg)
+                })
+
+            })
+        })
+        // /** END QTY */
+    })
+
+    // console.log(users)
+    usersDB.forEach((u) => {
+        let username = u.get('username')
+
+        // /* MISS QTY */
+        amqp.connect(rbbConfig.url, function (error0, connection) {
+            connection.createChannel(function (error1, channel) {
+                channel.assertQueue(rbbConfig.queueStatsDis + username, {
+                    durable: true
+                })
+                channel.prefetch(1)
+                channel.consume(rbbConfig.queueStatsDis + username, function reply(msg) {
+                    var n = msg.content.toString()
+                    console.log(n)
+                    var r = missQty(username)
+                    channel.sendToQueue(msg.properties.replyTo,
+                        Buffer.from("OK"), {
+                            correlationId: msg.properties.correlationId
+                        })
+                    channel.ack(msg)
+                })
+
+            })
+        })
+        // /** END QTY */
+    })
+
     await User.paginate({}, options, (err, result) => {
-        if (!err)
-            res.json(result)
-        else
+        if (!err) {
+            let users = result.docs
+            res.render('user-list', { users })
+
+        }
+        else {
             res.send("error de listado")
+        }
+
     })
 }
 
@@ -53,73 +144,6 @@ exports.findUser = async (req, res) => {
 }
 
 exports.search = (req, res) => {
-
-
-    const instance = new Neode('bolt://localhost:7687', 'neo4j', '123')
-    //const users = await User.find()
-
-    // const books = [
-    //     {
-    //         content: 'The most merciful thing in the world, I think, is the inability of the human mind to correlate all its contents.',
-    //         title: 'One Hundred Years of Solitude',
-    //         author: 'Gabriel Garcia Marquez'
-    //     },
-    //     {
-    //         content: 'It was a bright cold day in April, and the clocks were striking thirteen.',
-    //         title: '1984',
-    //         author: 'George Orwell'
-    //     },
-    //     {
-    //         content: 'Happy families are all alike; every unhappy family is unhappy in its own way.',
-    //         author: 'Leo Tolstoy',
-    //         title: 'Anna Karenina'
-    //     },
-    //     {
-    //         content: 'True! – nervous – very, very nervous I had been and am; but why will you say that I am mad?',
-    //         author: 'Edgar Allan Poe',
-    //         title: 'The Tell-Tale Heart'
-    //     }
-    // ]
-
-    // // before using this library make sure you call the following function for loading lucene .jars in Java classpath:
-    // lucene.initialize()
-
-    // // create lucene index in memory:
-    // const analyzer = new lucene.analysis.standard.StandardAnalyzer()
-    // const writerConfig = new lucene.index.IndexWriterConfig(analyzer)
-    // const index = new lucene.store.RAMDirectory()
-    // const writer = new lucene.index.IndexWriter(index, writerConfig)
-
-    // // add the documents:
-    // books.forEach(book => {
-    //     const doc = new lucene.document.Document()
-    //     doc.add(new lucene.document.TextField('content', book.content, lucene.document.FieldStore.YES))
-    //     doc.add(new lucene.document.TextField('author', book.author, lucene.document.FieldStore.YES))
-    //     doc.add(new lucene.document.TextField('title', book.title, lucene.document.FieldStore.YES))
-    //     writer.addDocument(doc)
-    // })
-
-    // // because we finished adding documents we close the index so we can start searching:
-    // writer.close()
-
-    // // now we want to search so we create a directory reader, index searcher and a query parser
-    // const directory = lucene.index.DirectoryReader.open(index)
-    // const searcher = new lucene.search.IndexSearcher(directory)
-    // const parser = new lucene.queryparser.classic.QueryParser('content', analyzer)
-
-    // // searching for 'phrase does not exists' should return 0 results
-    // let topDocs = searcher.search(parser.parse('phrase does not exists'), 10)
-
-    // // searching for 'cold' should return 1 results. We iterate found documents and print its author and titles:
-    // topDocs = searcher.search(parser.parse('cold'), 10) //TODO: lucene issue : why searching for 'the' is returning 0 results ? 
-
-    // // now get back the document from the index to access matched book's author and title
-    // const foundDoc = searcher.doc(topDocs.scoreDocs[0].doc)
-    // console.log(`Found "${foundDoc.get('title')}" authored by ${foundDoc.get('author')}`);
-
-
-
-
     res.send("ELASTIC")
 }
 
@@ -128,9 +152,62 @@ exports.delete = async (req, res) => {
     const userBD = await User.findById(_id)
     console.log(userBD)
     await User.findOneAndDelete(_id)
+    // INIT RABBIT
+    amqp.connect(rbbConfig.url, function (error0, connection) {
+        connection.createChannel(function (error1, channel) {
+            channel.assertQueue('', {
+                exclusive: true
+            }, (err, q) => {
+                if (err)
+                    throw err
+                var correlationId = generateUuid()
+                var fuente = userBD.username
+                channel.consume(q.queue, (msg) => {
+                    if (msg.properties.correlationId == correlationId) {
+                    }
+                }, { noAck: true })
+                channel.sendToQueue(rbbConfig.queueDeleteUser,
+                    Buffer.from(fuente.toString()), {
+                        correlationId: correlationId,
+                        replyTo: q.queue
+                    })
+            })
+        })
+    })
+    // END RABBIT
 
     res.send("ELIMINADO ")
 }
 
+async function addQty(name) {
+    const userBD = await User.findOne({ username: name })
+    console.log("FUNCTION" + userBD)
+    console.log(userBD.username + "TIENEN " + userBD.qty)
+    if (userBD) {
+        userBD.qty = userBD.qty + 1
+        await userBD.save()
+    } else {
+        res.status(500).json({ error: 'Internal Error' })
+    }
+    console.log('ADD QTY')
+}
 
+async function missQty(name) {
+    const userBD = await User.findOne({ username: name })
+    console.log("FUNCTION" + userBD)
+    console.log(userBD.username + "TIENEN " + userBD.qty)
+    if (userBD) {
+        userBD.qty = userBD.qty - 1
+        await userBD.save()
+    } else {
+        res.status(500).json({ error: 'Internal Error' })
+    }
+    console.log('ADD QTY')
+}
+
+function generateUuid() {
+    return Math.random().toString() +
+        Math.random().toString() +
+        Math.random().toString();
+}
 

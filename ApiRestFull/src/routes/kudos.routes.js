@@ -1,11 +1,65 @@
+const kudos = require('../controllers/kudos.controller.js');
+const User = require('../models/user.model.js')
+
+const neo4j = require('neo4j-driver').v1
+const neo4jDate = require('neo4j-driver').Date
+
+
+
 module.exports = (app) => {
-    const kudos = require('../controllers/kudos.controller.js');
+    var driver = neo4j.driver('bolt://localhost:7687', neo4j.auth.basic('neo4j', '123'))
+    var session = driver.session()
+
+
+
+    app.get('/kudos/', async (req, res) => {
+        kudos.user
+        session.run('MATCH (n:User) RETURN n')
+            .then((usersN4J) => {
+                var users = []
+                usersN4J.records.forEach((record) => {
+                    if (record._fields[0].properties.nick != null) {
+                        users.push({
+                            nickname: record._fields[0].properties.nick,
+                            name: record._fields[0].properties.nombre
+                        })
+                    }
+
+                })
+                session.run('MATCH (e:User)-[:ENVIA]->(k:Kudos) , (k:Kudos)-[:RECIBE]->(r:User) RETURN e.nick, k.idKudos, k.fecha, k.tema, k.texto, r.nick ORDER BY k.fecha')
+                    .then(async (kudosN4J) => {
+                        var kudos = []
+
+                        const userMongo = await User.find().sort({ username: -1 })
+
+                        kudosN4J.records.map(record => {
+                            kudos.push({
+                                id: record.get("k.idKudos"),
+                                tema: record.get("k.tema"),
+                                envia: record.get("e.nick"),
+                                recibe: record.get("r.nick")
+                            })
+                        });
+                        kudos.deleteUserN4J
+                        res.render('index', { kudos, userMongo })
+                    })
+                    .catch((err) => {
+                        console.log(err)
+                    })
+            })
+            .catch((err) => {
+                console.log(err)
+            })
+
+
+
+    })
 
     // Create
-    app.post('/kudos', kudos.create);
+    app.post('/kudos/add', kudos.create);
 
     // Retrieve all
-    app.get('/list', kudos.findAll);
+    app.get('/kudos/list', kudos.findAll);
 
     // Retrieve a single 
     app.get('/kudos/:kudosId', kudos.findOne);
@@ -14,5 +68,7 @@ module.exports = (app) => {
     app.put('/kudos/:kudosId', kudos.update);
 
     // Delete
-    app.delete('/kudos/:_id', kudos.delete)
+    app.post('/kudos/delete/:kudosId', kudos.delete)
+
+    app.get('/user/kudos', kudos.user)
 }

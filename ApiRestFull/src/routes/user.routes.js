@@ -9,7 +9,7 @@ module.exports = (app) => {
 
     app.get('/user/:_id', user.findUser)
 
-    app.delete('/user/:_id', user.delete)
+    app.post('/user/delete/:_id', user.delete)
 
     app.get('/search', user.search)
 }

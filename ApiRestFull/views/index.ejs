@@ -1,0 +1,93 @@
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a href="http://localhost/rest_ci/users/" class="btn btn-info">USUARIO NUEVO </a>
+                <br>
+                <a href="/kudos/list?page=0&limit=10" class="btn btn-defaut">Lista de KUDOS</a>
+                <hr>
+                <h1>KUDOS</h1>
+                <form action="/kudos/add" method="POST" class="form">
+                    <input type="text" name="de" placeholder="DE" class="form-control">
+                    <input type="text" name="para" placeholder="PARA" class="form-control"><br>
+                    <input type="text" name="tema" placeholder="Tema" class="form-control"><br>
+                    <input type="text" name="lugar" placeholder="lugar" class="form-control"><br>
+                    <textarea name="texto" class="form-control"></textarea><br>
+
+                    <input type="submit" name="SEND" class="btn btn-primary">
+
+                </form>
+
+            </div>
+
+
+            <div class="col-md-3">
+                <div class="card">
+                    <h1 class="card-header">USUARIOS</h1>
+                    <ul>
+                        <% userMongo.forEach((user) =>{%>
+                        <li><%= user.username%>
+                            <form action="/user/delete/<%= user._id%>?_method=DELETE" method="POST">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <input type="submit" value="Eliminar">
+                            </form>
+
+                        </li>
+                        <%}) %>
+                    </ul>
+                    <a href="/user/list?page=1&limit=10" class="btn btn-warning">LISTA DE USUARIOS</a>
+                </div>
+
+            </div>
+
+            <div class="col-md-9">
+
+                <h1>KUDOS</h1>
+                <div class="row">
+                    <% kudos.forEach((k) =>{%>
+                    <div class="col-md-4 mt-2">
+                        <div class="card">
+                            <div class="card-header">
+
+                                PARA: <%= k.recibe %>
+                            </div>
+                            <div class="card-header">
+                                <%= k.tema%>
+                                <hr>
+                                <span class="btn btn-default">
+                                    DE: <%= k.envia %>
+                                </span>
+                                <hr>
+                                <a href="/kudos/<%= k.id%>" class="badge badge-primary">Ver Mas</a>
+
+                                <form action="/kudos/delete/<%= k.id%>?_method=DELETE" method="POST">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <input type="submit" value="Eliminar">
+                                </form>
+                            </div>
+
+                        </div>
+
+                        <div class="clearfix"></div>
+                    </div>
+                    <%}) %>
+                </div>
+
+            </div>
+        </div>
+
+
+
+    </div>
+
+</body>
