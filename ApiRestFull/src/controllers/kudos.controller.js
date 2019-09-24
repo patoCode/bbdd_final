@@ -234,6 +234,7 @@ exports.user = async (reqe, res) => {
 
 
 exports.deleteUserN4J = (req, res) => {
+    console.log("INgrese ACA")
 
     // RABBIT INIT
     amqp.connect(rbbConfig.url, function (error0, connection) {
@@ -244,7 +245,7 @@ exports.deleteUserN4J = (req, res) => {
             channel.prefetch(1)
             channel.consume(rbbConfig.queueDeleteUser, function reply(msg) {
                 var n = msg.content.toString()
-                console.log(n)
+                console.log("ELIMINAR A: " + n)
                 var r = deleteUser(n)
                 channel.sendToQueue(msg.properties.replyTo,
                     Buffer.from("OK"), {
@@ -255,6 +256,7 @@ exports.deleteUserN4J = (req, res) => {
 
         })
     })
+    res.send("OK")
     // RABBIT END
 }
 
@@ -271,7 +273,7 @@ function createUser(username) {
         value.getTimezoneOffset() * 60
     )
     var name = username
-    session.run('CREATE (a:User {nick: {nickParam}, fecha:{dateParam}})', { nickParam: name, dateParam: fecha })
+    session.run('CREATE (a:User {name:{nickParam}, nick: {nickParam}, fecha:{dateParam}}) RETURN a.nick', { nickParam: name, dateParam: fecha })
         .then((result) => {
             console.log("CREADO EN NEO4J")
         })

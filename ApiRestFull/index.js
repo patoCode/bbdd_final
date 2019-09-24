@@ -6,6 +6,9 @@ const mongoose = require('mongoose')
 const neo4j = require('neo4j-driver').v1
 const neo4jDate = require('neo4j-driver').Date
 const method = require('method-override')
+const solr = require('solr-node')
+const influx = require('influxdb-nodejs')
+var people = require('./people.json')
 
 
 const dbConfig = require('./src/config/database.config.js')
@@ -14,6 +17,7 @@ const dbConfig = require('./src/config/database.config.js')
 const app = express()
 
 // DATABASE
+
 
 mongoose.connect(dbConfig.url, {
     useNewUrlParser: true,

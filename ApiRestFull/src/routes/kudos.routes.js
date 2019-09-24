@@ -40,7 +40,7 @@ module.exports = (app) => {
                                 recibe: record.get("r.nick")
                             })
                         });
-                        kudos.deleteUserN4J
+
                         res.render('index', { kudos, userMongo })
                     })
                     .catch((err) => {
@@ -54,6 +54,8 @@ module.exports = (app) => {
 
 
     })
+
+    app.get('/kudos/user/del', kudos.deleteUserN4J)
 
     // Create
     app.post('/kudos/add', kudos.create);

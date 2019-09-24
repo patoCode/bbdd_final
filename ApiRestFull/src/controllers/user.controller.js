@@ -57,6 +57,7 @@ exports.create = async (req, res) => {
         /* END  */
         res.redirect('/kudos/')
     } else {
+        console.log("+++++++++++ NO USUARIOS DEL MISMO NOMBRE ++++++++++++")
         res.send("USERNAME REPETIDO " + req.body.username)
     }
 
@@ -150,8 +151,8 @@ exports.search = (req, res) => {
 exports.delete = async (req, res) => {
     const { _id } = req.params
     const userBD = await User.findById(_id)
-    console.log(userBD)
-    await User.findOneAndDelete(_id)
+    const eliminado = await userBD.delete()
+
     // INIT RABBIT
     amqp.connect(rbbConfig.url, function (error0, connection) {
         connection.createChannel(function (error1, channel) {
@@ -176,7 +177,7 @@ exports.delete = async (req, res) => {
     })
     // END RABBIT
 
-    res.send("ELIMINADO ")
+    res.redirect('/kudos/')
 }
 
 async function addQty(name) {

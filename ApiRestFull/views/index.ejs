@@ -34,10 +34,11 @@
             <div class="col-md-3">
                 <div class="card">
                     <h1 class="card-header">USUARIOS</h1>
+                    <a href="/user/list?page=1&limit=10" class="btn btn-info btn-sm">LISTA DE USUARIOS</a>
                     <ul>
                         <% userMongo.forEach((user) =>{%>
                         <li><%= user.username%>
-                            <form action="/user/delete/<%= user._id%>?_method=DELETE" method="POST">
+                            <form action="/user/delete/<%= user._id%>?_method=DELETE" method="POST" id="<%= user._id%>">
                                 <input type="hidden" name="_method" value="DELETE">
                                 <input type="submit" value="Eliminar">
                             </form>
@@ -45,7 +46,7 @@
                         </li>
                         <%}) %>
                     </ul>
-                    <a href="/user/list?page=1&limit=10" class="btn btn-warning">LISTA DE USUARIOS</a>
+
                 </div>
 
             </div>
@@ -70,7 +71,7 @@
                                 <hr>
                                 <a href="/kudos/<%= k.id%>" class="badge badge-primary">Ver Mas</a>
 
-                                <form action="/kudos/delete/<%= k.id%>?_method=DELETE" method="POST">
+                                <form action="/kudos/delete/<%= k.id%>?_method=DELETE" method="POST" id="<%= k.id%>">
                                     <input type="hidden" name="_method" value="DELETE">
                                     <input type="submit" value="Eliminar">
                                 </form>
