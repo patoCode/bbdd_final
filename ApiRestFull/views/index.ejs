@@ -14,11 +14,11 @@
             <div class="col-md-12">
                 <a href="http://localhost/rest_ci/users/" class="btn btn-info">USUARIO NUEVO </a>
                 <br>
-                <a href="/kudos/list?page=0&limit=10" class="btn btn-defaut">Lista de KUDOS</a>
+
                 <hr>
                 <h1>KUDOS</h1>
                 <form action="/kudos/add" method="POST" class="form">
-                    <input type="text" name="de" placeholder="DE" class="form-control">
+                    <input type="text" name="de" placeholder="DE" class="form-control"><br>
                     <input type="text" name="para" placeholder="PARA" class="form-control"><br>
                     <input type="text" name="tema" placeholder="Tema" class="form-control"><br>
                     <input type="text" name="lugar" placeholder="lugar" class="form-control"><br>
@@ -32,15 +32,16 @@
 
 
             <div class="col-md-3">
+                <h1>USUARIOS</h1>
                 <div class="card">
-                    <h1 class="card-header">USUARIOS</h1>
-                    <a href="/user/list?page=1&limit=10" class="btn btn-info btn-sm">LISTA DE USUARIOS</a>
+
+                    <a href="/user/list?page=1&limit=10" class="btn btn-primary btn-sm">LISTA DE USUARIOS</a>
                     <ul>
                         <% userMongo.forEach((user) =>{%>
                         <li><%= user.username%>
                             <form action="/user/delete/<%= user._id%>?_method=DELETE" method="POST" id="<%= user._id%>">
                                 <input type="hidden" name="_method" value="DELETE">
-                                <input type="submit" value="Eliminar">
+                                <input type="submit" value="Eliminar" class="btn btn-danger">
                             </form>
 
                         </li>
@@ -54,6 +55,7 @@
             <div class="col-md-9">
 
                 <h1>KUDOS</h1>
+                <a href="/kudos/list?page=0&limit=10" class="btn btn-primary btn-block">Lista de KUDOS</a>
                 <div class="row">
                     <% kudos.forEach((k) =>{%>
                     <div class="col-md-4 mt-2">

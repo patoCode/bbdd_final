@@ -203,7 +203,7 @@ async function missQty(name) {
     } else {
         res.status(500).json({ error: 'Internal Error' })
     }
-    console.log('ADD QTY')
+    console.log('ASUBSTRACT QTY')
 }
 
 function generateUuid() {
