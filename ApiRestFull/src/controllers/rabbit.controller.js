@@ -49,7 +49,6 @@ Rabbit.createUserRPC = (cola) => {
 
         })
     })
-
 }
 Rabbit.deleUserRPC = (cola) => {
     amqp.connect(rbbConfig.url, function (error0, connection) {
