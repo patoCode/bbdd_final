@@ -7,7 +7,7 @@ const Influx = {}
 
 Influx.insert = async (cpuVal, memoria, evento, detalle) => {
     let cpuDATA = Math.random() * 2000000;
-    console.log(cpuDATA);
+
     await clientInflux.write('ABC')
         .tag({
             evento,

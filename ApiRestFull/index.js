@@ -3,9 +3,7 @@ const path = require('path')
 const morgan = require('morgan')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
-const flash = require('connect-flash');
 const method = require('method-override')
-//const logs = require('./src/models/log.model')
 const dbConfig = require('./src/config/database.config.js')
 
 
@@ -32,7 +30,7 @@ app.use(morgan('dev'))
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(method('method'))
-//app.use(logs.httpStats)
+
 
 
 

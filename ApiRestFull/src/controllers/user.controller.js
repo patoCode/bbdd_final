@@ -29,11 +29,10 @@ exports.create = async (req, res) => {
             qty: 0
         })
         await user.save()
-        kudosC.user
+        await kudosC.user
 
         /* RABBIT */
         let uUidQUeue = generateUuid()
-
         Rabbit.produceRPC(user.username, rbbConfig.queueCreateUser, uUidQUeue)
 
         await Influx.insert(osUtils.cpuUsage((v) => {
@@ -72,12 +71,12 @@ exports.findAll = async (req, res) => {
     const usersDB = await User.find().sort({ nombre: -1 })
     usersDB.forEach(async (u) => {
         let username = u.get('username')
-        Rabbit.addRPC(username, rbbConfig.queueStats + username)
+        Rabbit.addRPC(username, rbbConfig.queueStats)
     })
 
     usersDB.forEach((u) => {
         let username = u.get('username')
-        Rabbit.discountRPC(username, rbbConfig.queueStatsDis + username)
+        Rabbit.discountRPC(username, rbbConfig.queueStatsDis)
     })
 
     await User.paginate({}, options, async (err, result) => {

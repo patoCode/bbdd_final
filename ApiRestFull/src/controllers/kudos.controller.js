@@ -81,9 +81,7 @@ exports.create = async (req, res) => {
 
                                     // // INIT RABBIT
                                     let uUidQUeue = generateUuid()
-                                    Rabbit.produceRPC(para, rbbConfig.queueStats + para, uUidQUeue)
-
-
+                                    Rabbit.produceRPC(para, rbbConfig.queueStats, uUidQUeue)
                                     res.redirect('/kudos/')
                                 })
                                 .catch((err) => {
@@ -203,26 +201,24 @@ exports.delete = (req, res) => {
             session.run('MATCH (k:Kudos {idKudos: {idParam}}) DETACH DELETE k', { idParam: kudosId })
                 .then(async (kudosN4J) => {
                     let uUidQUeue = generateUuid()
-                    Rabbit.produceRPC(para, rbbConfig.queueStatsDis + para, uUidQUeue)
+                    Rabbit.produceRPC(para, rbbConfig.queueStatsDis, uUidQUeue)
 
                     await Influx.insert(osUtils.cpuUsage((v) => {
                         return v
                     }), os.freemem(), 'DELETE-N4J', 'Borrado el kudos ' + kudosId)
-
-
-                    //kudosId
-                    async function run() {
-                        const { body } = await client.deleteByQuery({
-                            index: 'kudos',
-                            body: {
-                                query: {
-                                    id: kudosId
-                                }
-                            }
-                        })
-                        //console.log(body.hits.hits)
-                    }
-                    run().catch(console.log)
+                    // //kudosId
+                    // async function run() {
+                    //     const { body } = await client.deleteByQuery({
+                    //         index: 'kudos',
+                    //         body: {
+                    //             query: {
+                    //                 id: kudosId
+                    //             }
+                    //         }
+                    //     })
+                    //     //console.log(body.hits.hits)
+                    // }
+                    // run().catch(console.log)
                     res.redirect('/kudos/')
                 })
                 .catch((err) => {
@@ -243,7 +239,7 @@ exports.deleteMasive = async (id) => {
 exports.user = async (req, res) => {
     console.log("RABBIT DE USER INICIADO...")
     // RABBIT INIT
-    Rabbit.createUserRPC(rbbConfig.queueCreateUser)
+    await Rabbit.createUserRPC(rbbConfig.queueCreateUser)
 
     res.send('ok')
 }

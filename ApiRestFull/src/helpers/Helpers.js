@@ -1,5 +1,7 @@
 const User = require('../models/user.model.js')
 const neo4j = require('neo4j-driver').v1
+const osUtils = require('os-utils')
+const os = require('os')
 
 const Influx = require('../controllers/influx.controller')
 const Helper = {}
@@ -66,7 +68,11 @@ Helper.addQty = async (name) => {
     const userBD = await User.findOne({ username: name })
     if (userBD) {
         userBD.qty = userBD.qty + 1
+        await Influx.insert(osUtils.cpuUsage((v) => {
+            return v
+        }), os.freemem(), 'ADD-KUDOS', 'SUMAR KUDOS A ' + name)
         await userBD.save()
+
     } else {
         res.status(500).json({ error: 'Internal Error' })
     }
@@ -77,12 +83,17 @@ Helper.missQty = async (name) => {
     console.log("FUNCTION" + userBD)
     console.log(userBD.username + "TIENEN " + userBD.qty)
     if (userBD) {
-        userBD.qty = userBD.qty - 1
+        if (parseInt(userBD.qty) > 0) {
+            userBD.qty = userBD.qty - 1
+            await Influx.insert(osUtils.cpuUsage((v) => {
+                return v
+            }), os.freemem(), 'SUBSTRACT-KUDOS', 'RESTAR KUDOS A ' + name)
+        }
         await userBD.save()
     } else {
         res.status(500).json({ error: 'Internal Error' })
     }
-    console.log('ASUBSTRACT QTY')
+
 }
 
 module.exports = Helper
