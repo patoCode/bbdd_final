@@ -11,5 +11,5 @@ module.exports = (app) => {
 
     app.post('/user/delete/:_id', user.delete)
 
-    app.get('/search', user.search)
+    app.post('/user/search', user.search)
 }

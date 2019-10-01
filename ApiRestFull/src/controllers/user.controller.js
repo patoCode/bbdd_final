@@ -1,19 +1,23 @@
 const amqp = require('amqplib/callback_api')
-
-const elasticsearch = require('elasticsearch')
-const lucene = require('node-lucene')
-
+const elastic = require('@elastic/elasticsearch')
 
 const rbbConfig = require('../config/rabbit.config.js')
+const Rabbit = require('./rabbit.controller')
+
 const User = require('../models/user.model.js')
 const kudosC = require('../controllers/kudos.controller.js')
+const os = require('os')
+const osUtils = require('os-utils')
+const Influx = require('./influx.controller')
+
 const _self = this
 
-
+var client = new elastic.Client({
+    node: 'http://localhost:9200'
+})
 // Create  
 exports.create = async (req, res) => {
     const userBD = await User.findOne({ username: req.body.username })
-    console.log(userBD)
     if (!userBD) {
         const user = new User({
             nombre: req.body.nombre,
@@ -28,36 +32,31 @@ exports.create = async (req, res) => {
         kudosC.user
 
         /* RABBIT */
+        let uUidQUeue = generateUuid()
 
-        // INIT RABBIT
-        amqp.connect(rbbConfig.url, function (error0, connection) {
-            connection.createChannel(function (error1, channel) {
-                channel.assertQueue('', {
-                    exclusive: true
-                }, (err, q) => {
-                    if (err)
-                        throw err
-                    var correlationId = generateUuid()
-                    var fuente = user.username
-                    channel.consume(q.queue, (msg) => {
-                        if (msg.properties.correlationId == correlationId) {
-                        }
-                    }, { noAck: true })
-                    channel.sendToQueue(rbbConfig.queueCreateUser,
-                        Buffer.from(fuente.toString()), {
-                            correlationId: correlationId,
-                            replyTo: q.queue
-                        })
-                })
+        Rabbit.produceRPC(user.username, rbbConfig.queueCreateUser, uUidQUeue)
+
+        await Influx.insert(osUtils.cpuUsage((v) => {
+            return v
+        }), os.freemem(), 'CREATE-MGDB', 'Se creo el usuario ' + user.username)
+
+        async function run() {
+            await client.index({
+                index: 'usuarios',
+                body: {
+                    nombre: user.nombre,
+                    nickname: user.username
+                }
             })
-        })
-        // END RABBIT
-
+        }
+        run().catch(console.log)
 
         /* END  */
         res.redirect('/kudos/')
     } else {
-        console.log("+++++++++++ NO USUARIOS DEL MISMO NOMBRE ++++++++++++")
+        await Influx.insert(osUtils.cpuUsage((v) => {
+            return v
+        }), os.freemem(), 'ERROR-MGDB', 'USUARIO REPETIDO ' + req.body.username)
         res.send("USERNAME REPETIDO " + req.body.username)
     }
 
@@ -71,65 +70,23 @@ exports.findAll = async (req, res) => {
         limit: parseInt(limit, 10)
     }
     const usersDB = await User.find().sort({ nombre: -1 })
-    // console.log(users)
-    usersDB.forEach((u) => {
+    usersDB.forEach(async (u) => {
         let username = u.get('username')
-
-        // /* ADD QTY */
-        amqp.connect(rbbConfig.url, function (error0, connection) {
-            connection.createChannel(function (error1, channel) {
-                channel.assertQueue(rbbConfig.queueStats + username, {
-                    durable: true
-                })
-                channel.prefetch(1)
-                channel.consume(rbbConfig.queueStats + username, function reply(msg) {
-                    var n = msg.content.toString()
-                    console.log(n)
-                    var r = addQty(username)
-                    channel.sendToQueue(msg.properties.replyTo,
-                        Buffer.from("OK"), {
-                            correlationId: msg.properties.correlationId
-                        })
-                    channel.ack(msg)
-                })
-
-            })
-        })
-        // /** END QTY */
+        Rabbit.addRPC(username, rbbConfig.queueStats + username)
     })
 
-    // console.log(users)
     usersDB.forEach((u) => {
         let username = u.get('username')
-
-        // /* MISS QTY */
-        amqp.connect(rbbConfig.url, function (error0, connection) {
-            connection.createChannel(function (error1, channel) {
-                channel.assertQueue(rbbConfig.queueStatsDis + username, {
-                    durable: true
-                })
-                channel.prefetch(1)
-                channel.consume(rbbConfig.queueStatsDis + username, function reply(msg) {
-                    var n = msg.content.toString()
-                    console.log(n)
-                    var r = missQty(username)
-                    channel.sendToQueue(msg.properties.replyTo,
-                        Buffer.from("OK"), {
-                            correlationId: msg.properties.correlationId
-                        })
-                    channel.ack(msg)
-                })
-
-            })
-        })
-        // /** END QTY */
+        Rabbit.discountRPC(username, rbbConfig.queueStatsDis + username)
     })
 
-    await User.paginate({}, options, (err, result) => {
+    await User.paginate({}, options, async (err, result) => {
         if (!err) {
             let users = result.docs
+            await Influx.insert(osUtils.cpuUsage((v) => {
+                return v
+            }), os.freemem(), 'LIST-MGDB', 'List ALL ')
             res.render('user-list', { users })
-
         }
         else {
             res.send("error de listado")
@@ -144,8 +101,35 @@ exports.findUser = async (req, res) => {
     res.json(user)
 }
 
-exports.search = (req, res) => {
-    res.send("ELASTIC")
+exports.search = async (req, res) => {
+    const { input } = req.body
+    var results = []
+    async function run() {
+        const { body } = await client.search({
+            index: 'usuarios',
+            body: {
+                query: {
+                    multi_match: {
+                        fields: ["nombre", "nickname"],
+                        query: input.toString(),
+                        fuzziness: 'AUTO'
+                    }
+                }
+            }
+        })
+        body.hits.hits.map(record => {
+            results.push({
+                nombre: record._source.nombre,
+                nickname: record._source.nickname
+            })
+        })
+        res.json(results)
+    }
+    run().catch(console.log)
+
+    await Influx.insert(osUtils.cpuUsage((v) => {
+        return v
+    }), os.freemem(), 'SEARC-ES', 'Search el termino ' + input)
 }
 
 exports.delete = async (req, res) => {
@@ -153,29 +137,24 @@ exports.delete = async (req, res) => {
     const userBD = await User.findById(_id)
     const eliminado = await userBD.delete()
 
-    // INIT RABBIT
-    amqp.connect(rbbConfig.url, function (error0, connection) {
-        connection.createChannel(function (error1, channel) {
-            channel.assertQueue('', {
-                exclusive: true
-            }, (err, q) => {
-                if (err)
-                    throw err
-                var correlationId = generateUuid()
-                var fuente = userBD.username
-                channel.consume(q.queue, (msg) => {
-                    if (msg.properties.correlationId == correlationId) {
-                    }
-                }, { noAck: true })
-                channel.sendToQueue(rbbConfig.queueDeleteUser,
-                    Buffer.from(fuente.toString()), {
-                        correlationId: correlationId,
-                        replyTo: q.queue
-                    })
-            })
+    // // INIT RABBIT
+    let uUidQUeue = generateUuid()
+    Rabbit.produceRPC(userBD.username, rbbConfig.queueDeleteUser, uUidQUeue)
+
+    await Influx.insert(osUtils.cpuUsage((v) => {
+        return v
+    }), os.freemem(), 'DELETE-MGDB', 'Eliminado al usuario' + userBD.username)
+    async function run() {
+        const { body } = await client.deleteByQuery({
+            index: 'usuarios',
+            body: {
+                query: {
+                    nickname: userBD.username
+                }
+            }
         })
-    })
-    // END RABBIT
+    }
+    run().catch(console.log)
 
     res.redirect('/kudos/')
 }
@@ -208,7 +187,6 @@ async function missQty(name) {
 
 function generateUuid() {
     return Math.random().toString() +
-        Math.random().toString() +
         Math.random().toString();
 }
 

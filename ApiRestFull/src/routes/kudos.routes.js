@@ -4,13 +4,9 @@ const User = require('../models/user.model.js')
 const neo4j = require('neo4j-driver').v1
 const neo4jDate = require('neo4j-driver').Date
 
-
-
 module.exports = (app) => {
     var driver = neo4j.driver('bolt://localhost:7687', neo4j.auth.basic('neo4j', '123'))
     var session = driver.session()
-
-
 
     app.get('/kudos/', async (req, res) => {
         kudos.user
@@ -58,16 +54,16 @@ module.exports = (app) => {
     app.get('/kudos/user/del', kudos.deleteUserN4J)
 
     // Create
-    app.post('/kudos/add', kudos.create);
+    app.post('/kudos/add', kudos.create)
 
     // Retrieve all
-    app.get('/kudos/list', kudos.findAll);
+    app.get('/kudos/list', kudos.findAll)
 
     // Retrieve a single 
-    app.get('/kudos/:kudosId', kudos.findOne);
+    app.get('/kudos/:kudosId', kudos.findOne)
 
     // Update
-    app.put('/kudos/:kudosId', kudos.update);
+    app.post('/kudos/search', kudos.search)
 
     // Delete
     app.post('/kudos/delete/:kudosId', kudos.delete)
