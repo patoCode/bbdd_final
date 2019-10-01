@@ -1,0 +1,32 @@
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <a href="/kudos/" class="btn btn-info">INDEX</a>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <form action="/kudos/search" class="form" method="POST">
+                    <input type="text" name="input" class="form-control" placeholder="texto">
+                    <input type="submit" value="BUSCAR" class="btn btn-info">
+                </form>
+            </div>
+            <div class="col-md-12">
+                <ul>
+                    <%if (results.length > 0 ){ %>
+                    <% results.forEach(function(kudos){ %>
+                    <li><%= kudos.categoria %> / <%= kudos.contenido %></li>
+                    <% })%>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>

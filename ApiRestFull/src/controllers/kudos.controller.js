@@ -103,6 +103,13 @@ exports.create = async (req, res) => {
 }
 
 //SEARCH
+exports.searchView = (req, res) => {
+    var results = []
+    res.render('result-kudos-search', { results })
+
+}
+
+
 exports.search = async (req, res) => {
     const { input } = req.body
     var results = []
@@ -128,7 +135,7 @@ exports.search = async (req, res) => {
         await Influx.insert(osUtils.cpuUsage((v) => {
             return v
         }), os.freemem(), 'SEARCH-ES', 'Search el termino ' + input)
-        res.json(results)
+        res.render('result-kudos-search', { results })
     }
     run().catch(console.log)
 }

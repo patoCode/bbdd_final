@@ -65,6 +65,8 @@ module.exports = (app) => {
     // Update
     app.post('/kudos/search', kudos.search)
 
+    app.get('/search/kudos', kudos.searchView)
+
     // Delete
     app.post('/kudos/delete/:kudosId', kudos.delete)
 

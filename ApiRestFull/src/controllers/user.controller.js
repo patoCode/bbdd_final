@@ -100,35 +100,45 @@ exports.findUser = async (req, res) => {
     res.json(user)
 }
 
+exports.searchView = (req, res) => {
+    var results = []
+    res.render('result-search', { results })
+}
+
 exports.search = async (req, res) => {
     const { input } = req.body
     var results = []
-    async function run() {
-        const { body } = await client.search({
-            index: 'usuarios',
-            body: {
-                query: {
-                    multi_match: {
-                        fields: ["nombre", "nickname"],
-                        query: input.toString(),
-                        fuzziness: 'AUTO'
+    if (input == '') {
+        res.redirect('/search/user')
+    }
+    else {
+        async function run() {
+            const { body } = await client.search({
+                index: 'usuarios',
+                body: {
+                    query: {
+                        multi_match: {
+                            fields: ["nombre", "nickname"],
+                            query: input.toString(),
+                            fuzziness: 'AUTO'
+                        }
                     }
                 }
-            }
-        })
-        body.hits.hits.map(record => {
-            results.push({
-                nombre: record._source.nombre,
-                nickname: record._source.nickname
             })
-        })
-        res.json(results)
-    }
-    run().catch(console.log)
+            body.hits.hits.map(record => {
+                results.push({
+                    nombre: record._source.nombre,
+                    nickname: record._source.nickname
+                })
+            })
 
-    await Influx.insert(osUtils.cpuUsage((v) => {
-        return v
-    }), os.freemem(), 'SEARC-ES', 'Search el termino ' + input)
+        }
+        run().catch(console.log)
+        await Influx.insert(osUtils.cpuUsage((v) => {
+            return v
+        }), os.freemem(), 'SEARC-ES', 'Search el termino ' + input)
+    }
+    res.render('result-search', { results })
 }
 
 exports.delete = async (req, res) => {

@@ -12,4 +12,6 @@ module.exports = (app) => {
     app.post('/user/delete/:_id', user.delete)
 
     app.post('/user/search', user.search)
+
+    app.get('/search/user', user.searchView)
 }
