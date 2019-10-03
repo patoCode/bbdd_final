@@ -37,7 +37,7 @@ exports.create = async (req, res) => {
 
         await Influx.insert(osUtils.cpuUsage((v) => {
             return v
-        }), os.freemem(), 'CREATE-MGDB', 'Se creo el usuario ' + user.username)
+        }), os.freemem(), 'CREATE-USER', 'MONGO - Se creo el usuario ' + user.username)
 
         async function run() {
             await client.index({
@@ -55,7 +55,7 @@ exports.create = async (req, res) => {
     } else {
         await Influx.insert(osUtils.cpuUsage((v) => {
             return v
-        }), os.freemem(), 'ERROR-MGDB', 'USUARIO REPETIDO ' + req.body.username)
+        }), os.freemem(), 'ERROR', 'MONGO - USUARIO REPETIDO ' + req.body.username)
         res.send("USERNAME REPETIDO " + req.body.username)
     }
 
@@ -84,7 +84,7 @@ exports.findAll = async (req, res) => {
             let users = result.docs
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'LIST-MGDB', 'List ALL ')
+            }), os.freemem(), 'LIST-USER', 'MONGO - List all ')
             res.render('user-list', { users })
         }
         else {
@@ -136,7 +136,7 @@ exports.search = async (req, res) => {
         run().catch(console.log)
         await Influx.insert(osUtils.cpuUsage((v) => {
             return v
-        }), os.freemem(), 'SEARC-ES', 'Search el termino ' + input)
+        }), os.freemem(), 'SEARCH-USER', 'USER - Search el termino ' + input)
     }
     res.render('result-search', { results })
 }
@@ -152,46 +152,42 @@ exports.delete = async (req, res) => {
 
     await Influx.insert(osUtils.cpuUsage((v) => {
         return v
-    }), os.freemem(), 'DELETE-MGDB', 'Eliminado al usuario' + userBD.username)
-    async function run() {
-        const { body } = await client.deleteByQuery({
-            index: 'usuarios',
-            body: {
-                query: {
-                    nickname: userBD.username
-                }
-            }
-        })
-    }
-    run().catch(console.log)
+    }), os.freemem(), 'DELETE-USER', 'MONGO - Eliminado al usuario' + userBD.username)
+    // async function run() {
+    //     const { body } = await client.deleteByQuery({
+    //         index: 'usuarios',
+    //         body: {
+    //             query: {
+    //                 nickname: userBD.username
+    //             }
+    //         }
+    //     })
+    // }
+    // run().catch(console.log)  
 
     res.redirect('/kudos/')
 }
 
 async function addQty(name) {
     const userBD = await User.findOne({ username: name })
-    console.log("FUNCTION" + userBD)
-    console.log(userBD.username + "TIENEN " + userBD.qty)
     if (userBD) {
         userBD.qty = userBD.qty + 1
         await userBD.save()
     } else {
         res.status(500).json({ error: 'Internal Error' })
     }
-    console.log('ADD QTY')
+
 }
 
 async function missQty(name) {
     const userBD = await User.findOne({ username: name })
-    console.log("FUNCTION" + userBD)
-    console.log(userBD.username + "TIENEN " + userBD.qty)
+
     if (userBD) {
         userBD.qty = userBD.qty - 1
         await userBD.save()
     } else {
         res.status(500).json({ error: 'Internal Error' })
     }
-    console.log('ASUBSTRACT QTY')
 }
 
 function generateUuid() {

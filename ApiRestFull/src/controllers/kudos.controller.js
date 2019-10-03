@@ -12,9 +12,6 @@ const Influx = require('./influx.controller')
 
 const _self = this
 
-
-
-
 var client = new elastic.Client({
     node: 'http://localhost:9200'
 })
@@ -65,7 +62,7 @@ exports.create = async (req, res) => {
 
                                     await Influx.insert(osUtils.cpuUsage((v) => {
                                         return v
-                                    }), os.freemem(), 'CREATE-N4J', 'Se creo el Kudos ' + idKudos)
+                                    }), os.freemem(), 'CREATE-KUDOS', 'KUDOS - Se creo el Kudos de ' + de + " para " + para)
 
                                     async function run() {
                                         await client.index({
@@ -134,7 +131,7 @@ exports.search = async (req, res) => {
         })
         await Influx.insert(osUtils.cpuUsage((v) => {
             return v
-        }), os.freemem(), 'SEARCH-ES', 'Search el termino ' + input)
+        }), os.freemem(), 'SEARCH-KUDOS', 'KUDOS - Buscar el termino ' + input)
         res.render('result-kudos-search', { results })
     }
     run().catch(console.log)
@@ -158,7 +155,7 @@ exports.findAll = async (req, res) => {
             });
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'LIST-N4J', 'List ALL')
+            }), os.freemem(), 'LIST-KUDOS', 'N4J - List all')
             res.render('result', { kudos })
         })
         .catch((err) => {
@@ -183,7 +180,7 @@ exports.findOne = (req, res) => {
             });
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'DETAIL-N4J', 'Detalle del KUDOS ' + kudosId)
+            }), os.freemem(), 'DETAIL', 'Detalle de KUDOS ' + kudosId)
             res.render('result', { kudos })
         })
         .catch((err) => {
@@ -212,7 +209,7 @@ exports.delete = (req, res) => {
 
                     await Influx.insert(osUtils.cpuUsage((v) => {
                         return v
-                    }), os.freemem(), 'DELETE-N4J', 'Borrado el kudos ' + kudosId)
+                    }), os.freemem(), 'DELETE-KUDOS', 'N4J - Borrado el kudos ' + kudosId)
                     // //kudosId
                     // async function run() {
                     //     const { body } = await client.deleteByQuery({

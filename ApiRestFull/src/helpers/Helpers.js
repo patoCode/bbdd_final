@@ -27,13 +27,13 @@ Helper.createUsuario = (username) => {
             console.log("CREADO EN NEO4J")
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'CREATE-N4j', 'Creado el usuario ' + name)
+            }), os.freemem(), 'CREATE-N4J-USER', 'N4J - Creado el usuario ' + name)
         })
         .catch(async (err) => {
             console.log(err)
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'ERROR-N4J', 'Al crear usuario ' + name)
+            }), os.freemem(), 'ERROR', 'N4J - Al crear usuario ' + name)
         })
 }
 
@@ -45,13 +45,13 @@ Helper.deleteUser = (username) => {
             console.log("Eliminado EN Neo4J")
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'DELETE-N4J', 'Eliminar al usuario ' + username)
+            }), os.freemem(), 'DELETE-N4J-USER', 'N4J - Eliminar al usuario ' + username)
         })
         .catch(async (err) => {
             console.log(err, 'el usuario no existe')
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'ERROR-N4j', 'Al eliminar el usuario ' + username)
+            }), os.freemem(), 'ERROR', 'N4J - Al eliminar el usuario ' + username)
 
         })
 
@@ -70,7 +70,7 @@ Helper.addQty = async (name) => {
         userBD.qty = userBD.qty + 1
         await Influx.insert(osUtils.cpuUsage((v) => {
             return v
-        }), os.freemem(), 'ADD-KUDOS', 'SUMAR KUDOS A ' + name)
+        }), os.freemem(), 'ADD', 'SUMAR KUDOS A ' + name)
         await userBD.save()
 
     } else {
@@ -80,14 +80,13 @@ Helper.addQty = async (name) => {
 
 Helper.missQty = async (name) => {
     const userBD = await User.findOne({ username: name })
-    console.log("FUNCTION" + userBD)
-    console.log(userBD.username + "TIENEN " + userBD.qty)
+
     if (userBD) {
         if (parseInt(userBD.qty) > 0) {
             userBD.qty = userBD.qty - 1
             await Influx.insert(osUtils.cpuUsage((v) => {
                 return v
-            }), os.freemem(), 'SUBSTRACT-KUDOS', 'RESTAR KUDOS A ' + name)
+            }), os.freemem(), 'SUBSTRACT', 'RESTAR KUDOS A ' + name)
         }
         await userBD.save()
     } else {
